@@ -5,10 +5,11 @@ import Search from './Search';
 import ColumnSelection from './ColumnSelection';
 import TablePreview from './TablePreview';
 import projectDrawdown from '../shared/projectDrawdown';
+import CSVFileInput from './CSVFileInput';
 
 type State = {
   isLoaded: false,
-  selectedColumns: Array<string>
+  selectedColumns: Array<string>,
 };
 
 const IGNORED_COLUMNS = ['___s', '___id'];
@@ -17,9 +18,10 @@ export default class App extends React.Component {
   db = TAFFY.taffy();
   state: State = {
     isLoaded: false,
+    isLoading: false,
     selectedFid: null,
     similarRows: [],
-    selectedColumns: []
+    selectedColumns: [],
   };
 
   render() {
@@ -29,31 +31,37 @@ export default class App extends React.Component {
           <div className="hero-body">
             <div className="container">
               <h1 className="title">Welcome to Climate Wiki</h1>
-              <h2 className="subtitle">Where are you?</h2>
-              <div className="is-fullwidth">
+              <h2 className="subtitle">
+                {this.state.isLoaded
+                  ? 'Search below to find places similar to yours.'
+                  : 'Add the source CSV file to get started.'}
+              </h2>
+              {this.state.isLoaded ? (
                 <Search
+                  db={this.db}
                   onSelect={selection => {
                     const minPopulation = selection.POPULATION * 0.99;
                     const maxPopulation = selection.POPULATION * 1.5;
 
                     const similarRows = this.db(
                       { POPULATION: { gt: minPopulation } },
-                      { POPULATION: { lt: maxPopulation } }
+                      { POPULATION: { lt: maxPopulation } },
                     ).get();
 
                     this.setState({ selectedFid: selection.FID, similarRows });
                   }}
-                  values={
-                    this.state.isLoaded
-                      ? this.db()
-                          .limit(100)
-                          .get()
-                      : []
-                  }
+                  values={this.state.isLoaded ? this.db().get() : []}
                 />
-              </div>
+              ) : null}
               {this.state.isLoaded ? null : (
-                <input type="file" id="upload" onChange={this.onAddFile} />
+                <div className="columns">
+                  <div className="column is-half is-centered">
+                    <CSVFileInput
+                      onChange={this.onAddFile}
+                      isLoading={this.state.isLoading}
+                    />
+                  </div>
+                </div>
               )}
             </div>
           </div>
@@ -64,7 +72,7 @@ export default class App extends React.Component {
           </section>
         ) : null}
         {this.state.selectedFid ? (
-          <section>
+          <section className="section">
             <ColumnSelection
               selectedColumns={this.state.selectedColumns}
               onSelectAll={this.onSelectAll}
@@ -75,7 +83,11 @@ export default class App extends React.Component {
         ) : null}
         {this.state.isLoaded ? (
           <section className="section">
-            <button className="button" onClick={this.onExportCSV}>
+            <button
+              className="button is-primary is-large is-fullwidth"
+              onClick={this.onExportCSV}
+              disabled={this.state.selectedColumns.length === 0}
+            >
               Export CSV
             </button>
           </section>
@@ -89,11 +101,11 @@ export default class App extends React.Component {
     isOn
       ? this.setState({
           selectedColumns: this.state.selectedColumns.filter(
-            s => s !== solution
-          )
+            s => s !== solution,
+          ),
         })
       : this.setState({
-          selectedColumns: this.state.selectedColumns.concat([solution])
+          selectedColumns: this.state.selectedColumns.concat([solution]),
         });
   };
 
@@ -114,7 +126,7 @@ export default class App extends React.Component {
   onExportCSV = () => {
     const firstReferenceRow = this.state.similarRows[0];
     const initialHeaders = Object.keys(firstReferenceRow).filter(
-      prop => !IGNORED_COLUMNS.includes(prop)
+      prop => !IGNORED_COLUMNS.includes(prop),
     );
 
     // Add the solutions as headers.
@@ -152,6 +164,9 @@ export default class App extends React.Component {
 
   onAddFile = event => {
     const file = event.target.files[0];
+    this.setState({
+      isLoading: true,
+    });
     Papa.parse(file, {
       worker: true,
       dynamicTyping: true,
@@ -162,10 +177,11 @@ export default class App extends React.Component {
       },
       complete: () => {
         this.setState({
-          isLoaded: true
+          isLoaded: true,
+          isLoading: false,
         });
         console.log(this.db().first());
-      }
+      },
     });
   };
 }

@@ -2,22 +2,40 @@ import React from 'react';
 import Autocomplete from 'react-autocomplete';
 import fuzzysearch from 'fuzzysearch';
 import numeral from 'numeral';
+import classNames from 'classNames';
 
 type Props = {
-  values: Array<Object>
+  db: any,
+  values: Array<Object>,
 };
 type State = {
-  query: string
+  query: string,
 };
 export default class Search extends React.Component<Props> {
   state: State = {
-    query: ''
+    query: '',
   };
   render() {
+    const startsWith = new RegExp(`^${this.state.query}`, 'i');
+    const items = this.props.db({ UNINAME: { regex: startsWith } }).get();
     return (
       <Autocomplete
+        menuStyle={{
+          borderRadius: '3px',
+          boxShadow: '0 2px 12px rgba(0, 0, 0, 0.1)',
+          background: '#FFF',
+          padding: '2px 0',
+          fontSize: '90%',
+          position: 'fixed',
+          overflow: 'auto',
+          zIndex: 10,
+          maxHeight: '50%',
+        }}
+        wrapperStyle={{
+          className: 'is-block',
+        }}
         inputProps={{
-          className: 'input'
+          className: 'input',
         }}
         getItemValue={item => item.FID.toString()}
         shouldItemRender={(item, value) => {
@@ -26,11 +44,13 @@ export default class Search extends React.Component<Props> {
           }
           return fuzzysearch(value.toLowerCase(), item.UNINAME.toLowerCase());
         }}
-        items={this.props.values || []}
+        items={items}
         renderItem={(item, isHighlighted) => (
           <div
             key={item.FID}
-            style={{ background: isHighlighted ? 'lightgray' : 'white' }}
+            className={classNames('dropdown-item', {
+              'is-active': isHighlighted,
+            })}
           >
             {item.UNINAME}
             <br />
@@ -43,9 +63,9 @@ export default class Search extends React.Component<Props> {
         }}
         onSelect={value => {
           const item = this.props.values.find(
-            item => item.FID.toString() === value
+            item => item.FID.toString() === value,
           );
-          this.props.onSelect(item);
+          this.setState({ query: item.UNINAME }, this.props.onSelect(item));
         }}
       />
     );

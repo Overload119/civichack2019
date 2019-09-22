@@ -7,7 +7,7 @@ type Props = {
   selectedColumns: Array<number>,
   onSelectAll: () => void,
   onChangeColumn: solution => void,
-  onSelectNone: () => void
+  onSelectNone: () => void,
 };
 
 function SolutionSection(props) {
