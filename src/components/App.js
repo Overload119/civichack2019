@@ -180,7 +180,6 @@ export default class App extends React.Component {
           isLoaded: true,
           isLoading: false,
         });
-        console.log(this.db().first());
       },
     });
   };

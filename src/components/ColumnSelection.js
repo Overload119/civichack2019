@@ -36,21 +36,51 @@ function SolutionSection(props) {
   );
 }
 
+const COLUMN_COUNT = 3;
 export default class ColumnSelection extends React.Component<Props> {
   onClickSolution = solution => {
     this.props.onChangeColumn(solution);
   };
   render() {
+    const sortedSolutionData = [];
+    // Organize data so we can sort it by the solution types and the number of solutions.
+    Object.keys(projectDrawdown).forEach(solutionType => {
+      sortedSolutionData.push({
+        solutionType: solutionType,
+        solutions: projectDrawdown[solutionType],
+      });
+    });
+    sortedSolutionData.sort(solutionData => {
+      return solutionData.solutions.length;
+    });
+    // Initialize each column.
+    const columns = [];
+    for (let i = 0; i < COLUMN_COUNT; i++) {
+      columns.push([]);
+    }
+    // Append each of the solution sections to each column from smallest to largest.
+    let columnIndex = 0;
+    for (let i = 0; i < sortedSolutionData.length; i++) {
+      columns[i % COLUMN_COUNT].push(sortedSolutionData[i]);
+    }
     return (
-      <div className="menu">
-        {Object.keys(projectDrawdown).map(header => {
+      <div className="columns">
+        {columns.map(solutions => {
           return (
-            <SolutionSection
-              header={header}
-              selectedColumns={this.props.selectedColumns}
-              key={header}
-              onClick={this.onClickSolution}
-            />
+            <div className="column" key={solutions[0].solutionType}>
+              <div className="menu">
+                {solutions.map(solution => {
+                  return (
+                    <SolutionSection
+                      header={solution.solutionType}
+                      selectedColumns={this.props.selectedColumns}
+                      key={solution.solutionType}
+                      onClick={this.onClickSolution}
+                    />
+                  );
+                })}
+              </div>
+            </div>
           );
         })}
       </div>
