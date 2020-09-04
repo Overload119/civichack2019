@@ -24,7 +24,7 @@
     "is-url": "^1.2.4",
     "moment": "^2.24.0",
     "nanoevents": "^2.0.0",
-    "node-sass": "^4.12.0",
+    "node-sass": "^4.13.1",
     "normalize-url": "^4.3.0",
     "numeral": "^2.0.6",
     "papaparse": "^5.1.0",
